@@ -1,4 +1,4 @@
-const CACHE = 'rtok-v1792874229';
+const CACHE = 'rtok-v1792874567';
 const SHELL = ['./', 'index.html', 'styles.css', 'manifest.webmanifest',
   'js/app.js', 'js/feed.js', 'js/teach.js', 'js/check.js', 'js/ranker.js', 'js/progress.js',
   'js/store.js', 'js/dates.js', 'js/player.js', 'js/video.js', 'js/videos.js',
@@ -46,9 +46,14 @@ self.addEventListener('install', (e) => {
       };
       await Promise.all(Array.from({ length: 6 }, worker));
     } catch (_) { /* no clips list: shell only */ }
-    // No skipWaiting: an open page keeps its own version until it is closed, so text, timing marks
-    // and narration always come from the same publish.
+    // No automatic skipWaiting: an open page keeps its own version until it is closed or the user
+    // taps Update, so text, timing marks and narration always come from the same publish.
   })());
+});
+
+// The page's "New version — Update" button: the user chose to switch now (the page reloads after).
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {

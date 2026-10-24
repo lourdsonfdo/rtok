@@ -128,7 +128,34 @@ async function boot() {
     }
   });
 
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) watchForUpdates();
+}
+
+// iOS keeps a Home Screen app's page alive for a long time, so a new publish can sit waiting for
+// days. Check on launch and whenever the app comes back to the foreground, and offer a one-tap update.
+function watchForUpdates() {
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    const offer = (sw) => {
+      if (!sw || !navigator.serviceWorker.controller || $('#update')) return;
+      const b = document.createElement('button');
+      b.id = 'update';
+      b.className = 'notice update';
+      b.textContent = 'New version ready — tap to update';
+      b.addEventListener('click', () => {
+        b.disabled = true;
+        navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
+        sw.postMessage({ type: 'SKIP_WAITING' });
+      });
+      document.body.appendChild(b);
+    };
+    const track = (sw) => sw && sw.addEventListener('statechange', () => { if (sw.state === 'installed') offer(sw); });
+    offer(reg.waiting);
+    track(reg.installing);
+    reg.addEventListener('updatefound', () => track(reg.installing));
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') reg.update().catch(() => {});
+    });
+  }).catch(() => {});
 }
 
 boot().catch((err) => {

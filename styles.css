@@ -137,3 +137,4 @@ header { position: fixed; top: 0; left: 0; right: 0; z-index: 5; padding: calc(e
 @media (max-width: 350px) { .clip { padding-left: 18px; padding-right: 18px; } .q { font-size: 21px; } .opts button { padding: 11px; gap: 9px; } .brand span:last-child { font-size: 9px; } .teach-hint { left: 18px; font-size: 10px; } .paused { right: 18px; } #settings { padding: 18px; } }
 @media (max-height: 650px) { #gate { justify-content: flex-start; } .hero-icon { width: 76px; height: 76px; margin-bottom: 18px; } .hero-detail { margin-bottom: 20px; } .lesson-head { margin-top: 4px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+.notice.update { border: 1px solid var(--accent); font: 600 15px system-ui; text-align: center; min-height: 44px; bottom: calc(env(safe-area-inset-bottom) + 64px); cursor: pointer; }
