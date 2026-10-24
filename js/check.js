@@ -18,8 +18,8 @@ export function render(clip, ctx) {
   el.innerHTML = `<div class="body">
     <p class="kicker">Quick check</p>
     <p class="q">${escape(clip.q)}</p>
-    <div class="opts">${order.map((i) => `<button data-i="${i}">${escape(clip.o[i])}</button>`).join('')}</div>
-    <div class="why" hidden><p>${escape(clip.e)}</p>
+    <div class="opts">${order.map((i, letter) => `<button data-i="${escape(i)}"><span class="option-letter" aria-hidden="true">${escape(String.fromCharCode(65 + letter))}</span><span class="option-text">${escape(clip.o[i])}</span></button>`).join('')}</div>
+    <div class="why" role="status" hidden><strong class="why-title">The reasoning</strong><p>${escape(clip.e)}</p>
       <p class="src">${sourceLines(clip.claims, ctx.sources)}</p></div></div>`;
   let answered = false;
   el.querySelector('.opts').addEventListener('click', (ev) => {
@@ -36,7 +36,7 @@ export function render(clip, ctx) {
     el.querySelector('.why').hidden = false;
     // A long explanation scrolls inside the card; bring it into view without moving the feed.
     const body = el.querySelector('.body');
-    if (body.scrollHeight > body.clientHeight) body.scrollTo({ top: body.scrollHeight, behavior: 'smooth' });
+    if (body.scrollHeight > body.clientHeight) body.scrollTo({ top: body.scrollHeight, behavior: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
     ctx.onAnswer(clip, pick === clip.a);
   });
   return { el, activate() {}, deactivate() {} };

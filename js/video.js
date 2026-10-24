@@ -41,7 +41,7 @@ export function render(clip, ctx) {
   const src = embedSrc(clip);
   el.className = `clip video ${platform}`;
   el.innerHTML = `<div class="body">
-    <p class="kicker">${escape(PLATFORMS[platform] || clip.platform)} · ${escape(clip.creator)}</p>
+    <p class="kicker"><span class="platform-pill">${escape(PLATFORMS[platform] || clip.platform)}</span><span>${escape(clip.creator)}</span></p>
     <h2>${escape(clip.title)}</h2>
     <p class="video-badge ${clip.badge === 'ok' ? 'ok' : 'conflict'}">${escape(badgeText(clip))}</p>
     <p class="src">${escape(checkedText(clip))}</p>

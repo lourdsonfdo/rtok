@@ -30,10 +30,12 @@ export function render(clip, ctx) {
   el.tabIndex = 0;
   el.setAttribute('aria-label', 'Play or pause narration');
   el.innerHTML = `
+    <div class="lesson-head"><p class="kicker">The daily dose</p><span class="lesson-format">Listen &amp; learn</span></div>
     <div class="frames">${clip.frames.map((f, i) => `
-      <div class="frame${i ? '' : ' on'}"><p class="big">${escape(f.text)}</p>
+      <div class="frame${i ? '' : ' on'}"><span class="frame-number">${escape(String(i + 1).padStart(2, '0'))} / ${escape(String(clip.frames.length).padStart(2, '0'))}</span><p class="big">${escape(f.text)}</p>
         <p class="src">${sourceLines(f.claims, ctx.sources)}</p></div>`).join('')}
     </div>
+    <p class="teach-hint" aria-hidden="true">Tap to pause · Swipe to keep learning</p>
     <div class="bar"><div class="fill"></div></div>
     <div class="paused" aria-hidden="true" hidden>▶</div>`;
   const frames = [...el.querySelectorAll('.frame')];

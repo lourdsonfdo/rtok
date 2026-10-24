@@ -92,7 +92,7 @@ async function boot() {
   const exams = [...new Set(topics.map((t) => `${t.course}-${t.exam}`))];
   $('#exams').innerHTML = exams.map((k) => {
     const v = state.progress.exams[k] ? formatLocalDate(state.progress.exams[k]) : '';
-    return `<label>${escape(k.replace('-', ' '))} <input type="date" data-k="${escape(k)}" value="${v}"></label>`;
+    return `<label>${escape(k.replace('-', ' '))} <input type="date" data-k="${escape(k)}" value="${escape(v)}"></label>`;
   }).join('');
   $('#exams').addEventListener('change', (e) => {
     const k = e.target.dataset.k;
@@ -103,7 +103,16 @@ async function boot() {
       return { ...p, exams };
     });
   });
-  $('#gear').addEventListener('click', () => { $('#settings').hidden = !$('#settings').hidden; });
+  function setSettings(open) {
+    $('#settings').hidden = !open;
+    $('#gear').setAttribute('aria-expanded', String(open));
+    (open ? $('#settings-close') : $('#gear')).focus();
+  }
+  $('#gear').addEventListener('click', () => setSettings($('#settings').hidden));
+  $('#settings-close').addEventListener('click', () => setSettings(false));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !$('#settings').hidden) setSettings(false);
+  });
   $('#backup').addEventListener('click', () => { downloadBackup(state.progress).catch((err) => alert(err.message)); });
   $('#restore').addEventListener('change', async (e) => {
     const file = e.target.files[0];
