@@ -4,7 +4,7 @@ export const DAY = 24 * 60 * MIN;
 const STEPS = [1, 3, 7, 14, 30];
 
 export function emptyProgress() {
-  return { topics: {}, clips: {}, exams: {} };
+  return { topics: {}, clips: {}, exams: {}, hiddenVideos: [] };
 }
 
 function topic(p, id) {
@@ -32,6 +32,13 @@ export function recordSeen(p, clip, now) {
   const topics = { ...p.topics };
   for (const id of clip.topics) topics[id] = { ...topic(p, id), seen: topic(p, id).seen + 1 };
   return { ...p, topics, clips: { ...p.clips, [clip.id]: now } };
+}
+
+const videoId = (id) => typeof id === 'string' && /^v-(yt|tt|ig|fb)-[A-Za-z0-9_-]+$/.test(id);
+const hiddenIds = (ids) => Array.isArray(ids) ? [...new Set(ids.filter(videoId))] : [];
+
+export function hideVideo(p, id) {
+  return { ...p, hiddenVideos: hiddenIds([...(p.hiddenVideos || []), id]) };
 }
 
 const TOPIC_FIELDS = ['streak', 'due', 'seen', 'misses', 'answered'];
@@ -64,5 +71,6 @@ export function sanitizeProgress(p) {
   }
   out.clips = numbersOnly(p.clips);
   out.exams = numbersOnly(p.exams);
+  out.hiddenVideos = hiddenIds(p.hiddenVideos);
   return out;
 }

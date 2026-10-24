@@ -1,5 +1,5 @@
 import { loadProgress, saveProgressStrict, downloadBackup, readBackup } from './store.js';
-import { recordAnswer } from './progress.js';
+import { recordAnswer, hideVideo } from './progress.js';
 import { startFeed } from './feed.js';
 import { formatLocalDate } from './dates.js';
 import { escape } from './teach.js';
@@ -42,6 +42,7 @@ async function boot() {
   if (loadFailed) notice("Progress couldn't be loaded; changes won't be saved this session.");
   state.ctx = {
     sources,
+    onHideVideo: (clip) => state.update((p) => hideVideo(p, clip.id)),
     onAnswer: (clip, correct) => state.update((p) => recordAnswer(p, clip.topics, correct, Date.now())),
   };
 

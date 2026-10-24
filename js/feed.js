@@ -2,10 +2,11 @@
 // prunes old clips above the viewport so the DOM stays small.
 import { render as renderTeach } from './teach.js';
 import { render as renderCheck } from './check.js';
+import { render as renderVideo } from './video.js';
 import { pickNext } from './ranker.js';
 import { recordSeen } from './progress.js';
 
-const VIEWS = { teach: renderTeach, check: renderCheck };
+const VIEWS = { teach: renderTeach, check: renderCheck, video: renderVideo };
 const KEEP_ABOVE = 10; // clip sections kept above the current one
 const warned = new Set();
 
@@ -60,7 +61,9 @@ export function startFeed(root, state) {
   }
 
   function more() {
-    const pool = state.clips.filter((c) => state.filter === 'all' || c.topics.some((t) => state.topicsById[t]?.course === state.filter));
+    const pool = state.clips.filter((c) =>
+      (c.type !== 'video' || (navigator.onLine !== false && !(state.progress.hiddenVideos || []).includes(c.id))) &&
+      (state.filter === 'all' || c.topics.some((t) => state.topicsById[t]?.course === state.filter)));
     const next = pickNext({ clips: pool, topics: state.topics, progress: state.progress, now: Date.now(),
       recent: recentIds, n: 5, sinceCheck, lastType });
     for (const clip of next) {
