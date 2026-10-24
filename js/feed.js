@@ -16,11 +16,12 @@ export function startFeed(root, state) {
   let active = null;
   let sinceCheck = 0, lastType = null, caughtUp = false;
   let pruneTimer = null;
+  let paused = false, lastRecorded = null; // paused while the Videos tab is open
 
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       const item = shown.find((s) => s.view.el === e.target);
-      if (!item) continue;
+      if (!item || paused) continue;
       if (e.isIntersecting && e.intersectionRatio >= 0.6) {
         if (active !== item) {
           if (active) active.view.deactivate();
@@ -28,7 +29,8 @@ export function startFeed(root, state) {
           item.view.activate();
           // A video teaches only once played (ctx.onPlayVideo); scrolling past its poster is exposure.
           const record = item.clip.type === 'video' ? recordExposure : recordSeen;
-          state.update((p) => record(p, item.clip, Date.now()));
+          if (lastRecorded !== item) state.update((p) => record(p, item.clip, Date.now()));
+          lastRecorded = item;
           if (shown.indexOf(item) >= shown.length - 2) more();
           schedulePrune();
         }
@@ -102,5 +104,10 @@ export function startFeed(root, state) {
   }
 
   more();
-  return { reset };
+  return {
+    reset,
+    pause() { paused = true; for (const s of shown) s.view.deactivate(); active = null; },
+    // Re-observing makes IntersectionObserver report the clip in view again, which re-activates it.
+    resume() { paused = false; for (const s of shown) { io.unobserve(s.view.el); io.observe(s.view.el); } },
+  };
 }

@@ -24,6 +24,11 @@
     <label class="file">Restore backup <input id="restore" type="file" accept="application/json,.json"></label>
   </div>
   <main id="feed"></main>
+  <main id="videos" hidden></main>
+  <nav id="tabs" hidden>
+    <button data-tab="feed" class="on" aria-pressed="true">Feed</button>
+    <button data-tab="videos" aria-pressed="false">Videos</button>
+  </nav>
   <div id="gate"><h1>RTok</h1><p>Respiratory therapy, one swipe at a time.</p><button id="start">Start</button></div>
   <script type="module" src="js/app.js"></script>
 </body>

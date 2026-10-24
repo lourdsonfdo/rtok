@@ -1,7 +1,7 @@
-const CACHE = 'rtok-v1792873103';
+const CACHE = 'rtok-v1792873488';
 const SHELL = ['./', 'index.html', 'styles.css', 'manifest.webmanifest',
   'js/app.js', 'js/feed.js', 'js/teach.js', 'js/check.js', 'js/ranker.js', 'js/progress.js',
-  'js/store.js', 'js/dates.js', 'js/player.js', 'js/video.js',
+  'js/store.js', 'js/dates.js', 'js/player.js', 'js/video.js', 'js/videos.js',
   'content/clips.json', 'content/topics.json', 'content/sources.json', 'content/meta.json',
   'icons/icon-192.png', 'icons/icon-512.png'];
 

@@ -5,8 +5,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: non
 header { position: fixed; top: 0; left: 0; right: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; padding: calc(env(safe-area-inset-top) + 8px) 16px 8px; background: linear-gradient(var(--bg), transparent); }
 #filters button, #gear { background: none; border: 0; color: var(--muted); font: inherit; padding: 6px 10px; }
 #filters button.on { color: var(--fg); font-weight: 700; border-bottom: 2px solid var(--fg); }
-#feed { height: 100vh; height: 100dvh; overflow-y: scroll; overscroll-behavior: contain; scroll-snap-type: y mandatory; }
-.clip { height: 100vh; height: 100dvh; scroll-snap-align: start; scroll-snap-stop: always; position: relative; display: flex; flex-direction: column; justify-content: center; padding: calc(env(safe-area-inset-top) + 72px) 24px calc(env(safe-area-inset-bottom) + 48px); }
+#feed, #videos { height: 100vh; height: 100dvh; overflow-y: scroll; overscroll-behavior: contain; scroll-snap-type: y mandatory; }
+.clip { height: 100vh; height: 100dvh; scroll-snap-align: start; scroll-snap-stop: always; position: relative; display: flex; flex-direction: column; justify-content: center; padding: calc(env(safe-area-inset-top) + 72px) 24px calc(env(safe-area-inset-bottom) + 96px); }
 .teach { cursor: pointer; }
 .teach:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
 .teach .frames { position: relative; flex: 1; }
@@ -14,10 +14,10 @@ header { position: fixed; top: 0; left: 0; right: 0; z-index: 5; display: flex; 
 .frame.on { opacity: 1; transform: none; }
 .big { font-size: clamp(28px, 8vw, 44px); font-weight: 800; line-height: 1.15; margin: 0 0 16px; }
 .src { color: var(--muted); font-size: 13px; }
-.bar { position: absolute; left: 0; right: 0; bottom: env(safe-area-inset-bottom); height: 3px; background: #ffffff22; }
+.bar { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 48px); height: 3px; background: #ffffff22; }
 .fill { height: 100%; width: 0; background: var(--accent); }
 .paused { position: absolute; inset: 0; display: grid; place-items: center; font-size: 64px; color: #ffffffaa; pointer-events: none; }
-.paused.retry { inset: auto 20px calc(env(safe-area-inset-bottom) + 16px) auto; font-size: 28px; color: #ffffff88; }
+.paused.retry { inset: auto 20px calc(env(safe-area-inset-bottom) + 64px) auto; font-size: 28px; color: #ffffff88; }
 .check { background: var(--card); }
 /* Centered when it fits; scrolls inside the card (top stays reachable) when the explanation is long. */
 .check .body { min-height: 0; margin: auto 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -60,3 +60,6 @@ header { position: fixed; top: 0; left: 0; right: 0; z-index: 5; display: flex; 
 .video-retry, .video-skip { display: block; min-height: 44px; padding: 8px 4px; border: 0; background: none; color: var(--accent); font: inherit; font-size: 14px; cursor: pointer; }
 .video-status { color: var(--muted); font-size: 14px; }
 .video button:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+#tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; padding-bottom: env(safe-area-inset-bottom); background: var(--bg); border-top: 1px solid #ffffff1a; }
+#tabs button { flex: 1; height: 48px; background: none; border: 0; color: var(--muted); font: 600 15px system-ui; }
+#tabs button.on { color: var(--fg); }

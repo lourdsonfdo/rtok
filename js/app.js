@@ -1,6 +1,7 @@
 import { loadProgress, saveProgressStrict, downloadBackup, readBackup } from './store.js';
 import { recordAnswer, recordSeen, hideVideo } from './progress.js';
 import { startFeed } from './feed.js';
+import { startVideos } from './videos.js';
 import { formatLocalDate } from './dates.js';
 import { escape } from './teach.js';
 import * as player from './player.js';
@@ -57,6 +58,24 @@ async function boot() {
     player.unlock(); // must stay synchronous and first: iOS only unlocks audio inside the tap
     $('#gate').hidden = true;
     const feed = startFeed($('#feed'), state);
+    const videos = startVideos($('#videos'), state);
+    let tab = 'feed';
+    $('#tabs').hidden = false;
+    $('#tabs').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b || b.dataset.tab === tab) return;
+      tab = b.dataset.tab;
+      for (const x of $('#tabs').children) {
+        x.classList.toggle('on', x === b);
+        x.setAttribute('aria-pressed', String(x === b));
+      }
+      const [show, hide] = tab === 'videos' ? [videos, feed] : [feed, videos];
+      hide.pause();
+      player.pause();
+      $('#feed').hidden = tab !== 'feed';
+      $('#videos').hidden = tab !== 'videos';
+      show.resume();
+    });
     $('#filters').addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
@@ -66,6 +85,7 @@ async function boot() {
         x.setAttribute('aria-pressed', String(x === b));
       }
       feed.reset();
+      videos.reset();
     });
   }, { once: true });
 
