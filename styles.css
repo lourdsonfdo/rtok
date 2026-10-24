@@ -56,6 +56,7 @@ header { position: fixed; top: 0; left: 0; right: 0; z-index: 5; display: flex; 
 .video .poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .video iframe { display: block; background: var(--card); }
 .video-play { position: relative; width: 72px; height: 72px; border: 0; border-radius: 50%; background: var(--accent); color: var(--bg); font-size: 36px; cursor: pointer; }
-.video-skip { display: block; min-height: 44px; margin-top: 8px; padding: 8px 4px; border: 0; background: none; color: var(--accent); font: inherit; font-size: 14px; cursor: pointer; }
+.video-actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
+.video-retry, .video-skip { display: block; min-height: 44px; padding: 8px 4px; border: 0; background: none; color: var(--accent); font: inherit; font-size: 14px; cursor: pointer; }
 .video-status { color: var(--muted); font-size: 14px; }
 .video button:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }

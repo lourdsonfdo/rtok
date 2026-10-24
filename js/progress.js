@@ -34,6 +34,11 @@ export function recordSeen(p, clip, now) {
   return { ...p, topics, clips: { ...p.clips, [clip.id]: now } };
 }
 
+// A clip scrolled past (a video poster): stamped for rotation, but its topics are not taught.
+export function recordExposure(p, clip, now) {
+  return { ...p, clips: { ...p.clips, [clip.id]: now } };
+}
+
 const videoId = (id) => typeof id === 'string' && /^v-(yt|tt|ig|fb)-[A-Za-z0-9_-]+$/.test(id);
 const hiddenIds = (ids) => Array.isArray(ids) ? [...new Set(ids.filter(videoId))] : [];
 

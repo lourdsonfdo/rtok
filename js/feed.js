@@ -4,7 +4,7 @@ import { render as renderTeach } from './teach.js';
 import { render as renderCheck } from './check.js';
 import { render as renderVideo } from './video.js';
 import { pickNext } from './ranker.js';
-import { recordSeen } from './progress.js';
+import { recordSeen, recordExposure } from './progress.js';
 
 const VIEWS = { teach: renderTeach, check: renderCheck, video: renderVideo };
 const KEEP_ABOVE = 10; // clip sections kept above the current one
@@ -26,7 +26,9 @@ export function startFeed(root, state) {
           if (active) active.view.deactivate();
           active = item;
           item.view.activate();
-          state.update((p) => recordSeen(p, item.clip, Date.now()));
+          // A video teaches only once played (ctx.onPlayVideo); scrolling past its poster is exposure.
+          const record = item.clip.type === 'video' ? recordExposure : recordSeen;
+          state.update((p) => record(p, item.clip, Date.now()));
           if (shown.indexOf(item) >= shown.length - 2) more();
           schedulePrune();
         }

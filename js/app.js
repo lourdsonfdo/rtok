@@ -1,5 +1,5 @@
 import { loadProgress, saveProgressStrict, downloadBackup, readBackup } from './store.js';
-import { recordAnswer, hideVideo } from './progress.js';
+import { recordAnswer, recordSeen, hideVideo } from './progress.js';
 import { startFeed } from './feed.js';
 import { formatLocalDate } from './dates.js';
 import { escape } from './teach.js';
@@ -43,6 +43,7 @@ async function boot() {
   state.ctx = {
     sources,
     onHideVideo: (clip) => state.update((p) => hideVideo(p, clip.id)),
+    onPlayVideo: (clip) => state.update((p) => recordSeen(p, clip, Date.now())),
     onAnswer: (clip, correct) => state.update((p) => recordAnswer(p, clip.topics, correct, Date.now())),
   };
 

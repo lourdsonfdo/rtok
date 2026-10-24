@@ -26,9 +26,10 @@ export function pickNext({ clips, topics, progress, now, recent, n, sinceCheck =
   // Ties between equally needed topics go to the one seen longest ago, so the feed rotates.
   const topicSeen = {};
   for (const c of clips) for (const id of c.topics) topicSeen[id] = Math.max(topicSeen[id] ?? -1, lastSeen(c));
-  // Teach before quizzing: a topic counts as taught once seen before or picked in this batch.
+  // Teach before quizzing: a topic counts as taught once seen before or a teach clip for it is picked
+  // in this batch. A video only teaches once played (that marks the topic seen), so serving one doesn't.
   const taught = new Set(Object.keys(progress.topics).filter((id) => progress.topics[id]?.seen));
-  for (const id of used) for (const c of clips) if (c.id === id && c.type !== 'check') c.topics.forEach((t) => taught.add(t));
+  for (const id of used) for (const c of clips) if (c.id === id && c.type === 'teach') c.topics.forEach((t) => taught.add(t));
   const typeRank = (c) => (c.type === 'check' ? 1 : 0);
 
   const out = [];
@@ -50,7 +51,7 @@ export function pickNext({ clips, topics, progress, now, recent, n, sinceCheck =
     if (!pick) break;
     out.push(pick);
     used.add(pick.id);
-    if (pick.type !== 'check') pick.topics.forEach((t) => taught.add(t));
+    if (pick.type === 'teach') pick.topics.forEach((t) => taught.add(t));
     for (const tid of pick.topics) if (tid in score) score[tid] *= 0.1;
     since = pick.type === 'check' ? 0 : since + 1;
     prev = pick.type;

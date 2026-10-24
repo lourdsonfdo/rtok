@@ -2,7 +2,7 @@
   "version": 2,
   "mode": "legacy",
   "migratedFrom": "pre-ADR-324; capabilities=none-detected",
-  "migratedAt": 1792801276939,
+  "migratedAt": 1792868747972,
   "rules": [],
   "budgets": [],
   "usage": [],
