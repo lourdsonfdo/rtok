@@ -25,6 +25,8 @@ export function searchVideos(clips, topicsById, filter, query = '') {
   });
 }
 
+const AUTO_NEXT_MS = 1200; // pause after a video ends before the next one opens
+
 export function startVideos(root, state) {
   let active = null, paused = true, lastButton = null, shelfScroll = 0;
   root.innerHTML = `<div class="library-shelf">
@@ -63,18 +65,25 @@ export function startVideos(root, state) {
       <span class="library-review">${clip.badge === 'ok' ? `${escape(clip.checked)}/${escape(clip.total)} facts checked` : 'Source differences noted'} ↗</span></span>
       <span aria-hidden="true">→</span></button>`).join('');
     if (!videos.length) list.innerHTML = '<p class="library-empty">No videos match. Try another topic or course.</p>';
-    for (const button of list.querySelectorAll('button')) button.addEventListener('click', () => {
-      lastButton = button;
-      shelfScroll = root.scrollTop;
+    const buttons = [...list.querySelectorAll('button')];
+    function open(i, autoplay) {
+      lastButton = buttons[i];
+      if (detail.hidden) shelfScroll = root.scrollTop;
       active?.deactivate();
-      active = renderVideo(videos[Number(button.dataset.index)], { ...state.ctx, videoExitHint: 'return to your shelf' });
-      player.replaceChildren(active.el);
+      // When a video ends, the next one on the shelf opens and starts (iOS may still want a tap for sound).
+      const onDone = () => setTimeout(() => {
+        if (!paused && active === view && i + 1 < videos.length) open(i + 1, true);
+      }, AUTO_NEXT_MS);
+      const view = renderVideo(videos[i], { ...state.ctx, onDone, videoExitHint: 'return to your shelf' });
+      active = view;
+      player.replaceChildren(view.el);
       shelf.hidden = true;
       detail.hidden = false;
       root.scrollTop = 0;
-      if (!paused) active.activate();
+      if (!paused) { view.activate(); if (autoplay) view.play(); }
       back.focus({ preventScroll: true });
-    });
+    }
+    buttons.forEach((button, i) => button.addEventListener('click', () => open(i, false)));
   }
   input.addEventListener('input', draw);
   draw();

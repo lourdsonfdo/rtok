@@ -20,7 +20,7 @@ function instagramEmbed(clip) {
 
 export function embedSrc(clip) {
   switch (clip.platform) {
-    case 'youtube': return YT_ID.test(clip.embed || '') ? `https://www.youtube-nocookie.com/embed/${clip.embed}?playsinline=1&autoplay=1&rel=0` : null;
+    case 'youtube': return YT_ID.test(clip.embed || '') ? `https://www.youtube-nocookie.com/embed/${clip.embed}?playsinline=1&autoplay=1&rel=0&enablejsapi=1` : null;
     case 'tiktok': return /^\d+$/.test(clip.embed || '') ? `https://www.tiktok.com/player/v1/${clip.embed}?autoplay=1&rel=0` : null;
     case 'instagram': return instagramEmbed(clip);
     case 'facebook': return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(clip.url)}&show_text=false&autoplay=true`;
@@ -33,6 +33,17 @@ export const checkedText = (clip) => `${clip.checked} of ${clip.total} facts che
 export const thumbSrc = (clip) => clip.platform === 'youtube' ? `https://i.ytimg.com/vi/${clip.embed}/hqdefault.jpg` : null;
 
 const PLATFORMS = { youtube: 'YouTube', tiktok: 'TikTok', instagram: 'Instagram', facebook: 'Facebook' };
+
+const YT_ORIGIN = 'https://www.youtube-nocookie.com';
+
+// The YouTube player (enablejsapi=1) posts its state to the page; state 0 means the video ended.
+export function youtubeEnded(e) {
+  if (e.origin !== YT_ORIGIN || typeof e.data !== 'string') return false;
+  let m;
+  try { m = JSON.parse(e.data); } catch { return false; }
+  if (m.event === 'onStateChange') return m.info === 0;
+  return m.event === 'infoDelivery' && m.info?.playerState === 0;
+}
 
 export function render(clip, ctx) {
   const el = document.createElement('section');
@@ -83,7 +94,13 @@ export function render(clip, ctx) {
     else { status.hidden = true; play.hidden = false; }
   }
 
+  // Ask the YouTube player to report its state, and move on when it says the video ended.
+  function onMessage(e) {
+    if (iframe && e.source === iframe.contentWindow && youtubeEnded(e)) { stop(); ctx.onDone?.(clip); }
+  }
+
   function stop() {
+    globalThis.removeEventListener?.('message', onMessage);
     if (iframe) iframe.remove();
     iframe = null;
     poster.hidden = false;
@@ -104,6 +121,10 @@ export function render(clip, ctx) {
     poster.hidden = true;
     status.hidden = true;
     retry.hidden = false; // a stalled or failed embed has no recovery of its own
+    if (clip.platform === 'youtube') {
+      globalThis.addEventListener?.('message', onMessage);
+      iframe.addEventListener('load', () => iframe?.contentWindow?.postMessage(JSON.stringify({ event: 'listening' }), YT_ORIGIN));
+    }
     media.appendChild(iframe);
     // Only a real play teaches the topic; scrolling past the poster does not.
     if (!played) { played = true; ctx.onPlayVideo?.(clip); }
@@ -127,6 +148,7 @@ export function render(clip, ctx) {
 
   return {
     el,
+    play: start, // the next video after one ends (iOS may still want a tap before sound plays)
     activate() {
       globalThis.addEventListener?.('online', refresh);
       globalThis.addEventListener?.('offline', refresh);

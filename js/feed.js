@@ -7,6 +7,7 @@ import { pickNext } from './ranker.js';
 import { recordSeen, recordExposure } from './progress.js';
 
 const VIEWS = { teach: renderTeach, check: renderCheck, video: renderVideo };
+const AUTO_NEXT_MS = 1200; // pause after a lesson/video ends before the next card slides in
 const KEEP_ABOVE = 10; // clip sections kept above the current one
 const warned = new Set();
 
@@ -75,12 +76,17 @@ export function startFeed(root, state) {
         if (!warned.has(clip.type)) { warned.add(clip.type); console.warn(`Unknown clip type "${clip.type}"; skipping.`); }
         continue;
       }
-      const view = VIEWS[clip.type](clip, { ...state.ctx, onNext: () => {
+      const onNext = () => {
         if (!view.el.nextElementSibling) more();
         const next = view.el.nextElementSibling;
         if (next) { next.tabIndex = -1; next.focus({ preventScroll: true }); }
         next?.scrollIntoView({ behavior: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
-      } });
+      };
+      // A finished lesson or video moves on by itself after a beat, unless the user has already left it.
+      const onDone = () => setTimeout(() => {
+        if (!paused && active && active.view === view) onNext();
+      }, AUTO_NEXT_MS);
+      const view = VIEWS[clip.type](clip, { ...state.ctx, onNext, onDone });
       root.appendChild(view.el);
       shown.push({ clip, view });
       recentIds.push(clip.id);
