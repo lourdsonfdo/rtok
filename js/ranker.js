@@ -16,10 +16,18 @@ function boost(topic, exams, now) {
   return 1 + (30 - daysLeft) / 10;
 }
 
-export function pickNext({ clips, topics, progress, now, recent, n, sinceCheck = 0, lastType = null }) {
+// rand (e.g. Math.random) varies the feed between app opens: equally needed topics and clips come in
+// a different order each time. The jitter (±15%) is too small to cross need tiers (due > unseen > seen
+// > not due). Without rand the order is deterministic.
+const JITTER = 0.15;
+
+export function pickNext({ clips, topics, progress, now, recent, n, sinceCheck = 0, lastType = null, rand = null }) {
   const used = new Set(recent);
   const score = {};
-  for (const t of topics) score[t.id] = need(progress.topics[t.id], now) * boost(t, progress.exams || {}, now);
+  const jitter = () => (rand ? 1 + (rand() * 2 - 1) * JITTER : 1);
+  for (const t of topics) score[t.id] = need(progress.topics[t.id], now) * boost(t, progress.exams || {}, now) * jitter();
+  const coin = {};
+  for (const c of clips) coin[c.id] = rand ? rand() : 0;
   const byTopic = {};
   for (const c of clips) for (const id of c.topics) (byTopic[id] ||= []).push(c);
   const lastSeen = (c) => progress.clips[c.id] ?? -1;
@@ -43,7 +51,7 @@ export function pickNext({ clips, topics, progress, now, recent, n, sinceCheck =
     for (const strict of [true, false]) {
       const order = Object.keys(score).sort((a, b) => score[b] - score[a] || (topicSeen[a] ?? -1) - (topicSeen[b] ?? -1) || (a < b ? -1 : 1));
       for (const tid of order) {
-        const cand = (byTopic[tid] || []).filter((c) => ok(c, strict)).sort((a, b) => lastSeen(a) - lastSeen(b) || typeRank(a) - typeRank(b) || (a.id < b.id ? -1 : 1));
+        const cand = (byTopic[tid] || []).filter((c) => ok(c, strict)).sort((a, b) => lastSeen(a) - lastSeen(b) || typeRank(a) - typeRank(b) || coin[a.id] - coin[b.id] || (a.id < b.id ? -1 : 1));
         if (cand.length) { pick = cand[0]; break; }
       }
       if (pick) break;

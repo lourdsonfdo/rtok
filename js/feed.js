@@ -69,13 +69,18 @@ export function startFeed(root, state) {
       (c.type !== 'video' || (navigator.onLine !== false && !(state.progress.hiddenVideos || []).includes(c.id))) &&
       (state.filter === 'all' || c.topics.some((t) => state.topicsById[t]?.course === state.filter)));
     const next = pickNext({ clips: pool, topics: state.topics, progress: state.progress, now: Date.now(),
-      recent: recentIds, n: 5, sinceCheck, lastType });
+      recent: recentIds, n: 5, sinceCheck, lastType, rand: Math.random });
     for (const clip of next) {
       if (!VIEWS[clip.type]) {
         if (!warned.has(clip.type)) { warned.add(clip.type); console.warn(`Unknown clip type "${clip.type}"; skipping.`); }
         continue;
       }
-      const view = VIEWS[clip.type](clip, state.ctx);
+      const view = VIEWS[clip.type](clip, { ...state.ctx, onNext: () => {
+        if (!view.el.nextElementSibling) more();
+        const next = view.el.nextElementSibling;
+        if (next) { next.tabIndex = -1; next.focus({ preventScroll: true }); }
+        next?.scrollIntoView({ behavior: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+      } });
       root.appendChild(view.el);
       shown.push({ clip, view });
       recentIds.push(clip.id);

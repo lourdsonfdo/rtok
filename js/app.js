@@ -43,16 +43,15 @@ async function boot() {
   if (loadFailed) notice("Progress couldn't be loaded; changes won't be saved this session.");
   state.ctx = {
     sources,
+    topicsById: state.topicsById,
     onHideVideo: (clip) => state.update((p) => hideVideo(p, clip.id)),
     onPlayVideo: (clip) => state.update((p) => recordSeen(p, clip, Date.now())),
     onAnswer: (clip, correct) => state.update((p) => recordAnswer(p, clip.topics, correct, Date.now())),
   };
 
   const courses = [...new Set(topics.map((t) => t.course))].sort();
-  $('#filters').innerHTML = ['all', ...courses].map((c) => {
-    const on = c === 'all';
-    return `<button data-c="${escape(c)}" class="${on ? 'on' : ''}" aria-pressed="${on}">${on ? 'All' : escape(c)}</button>`;
-  }).join('');
+  $('#course').innerHTML = ['all', ...courses].map((c) =>
+    `<option value="${escape(c)}">${c === 'all' ? 'All courses' : `RCP ${escape(c)}`}</option>`).join('');
 
   $('#start').addEventListener('click', () => {
     player.unlock(); // must stay synchronous and first: iOS only unlocks audio inside the tap
@@ -76,14 +75,8 @@ async function boot() {
       $('#videos').hidden = tab !== 'videos';
       show.resume();
     });
-    $('#filters').addEventListener('click', (e) => {
-      const b = e.target.closest('button');
-      if (!b) return;
-      state.filter = b.dataset.c;
-      for (const x of $('#filters').children) {
-        x.classList.toggle('on', x === b);
-        x.setAttribute('aria-pressed', String(x === b));
-      }
+    $('#course').addEventListener('change', () => {
+      state.filter = $('#course').value;
       feed.reset();
       videos.reset();
     });

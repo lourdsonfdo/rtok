@@ -26,101 +26,123 @@ export function frameAt(t, marks, nFrames) {
 export function render(clip, ctx) {
   const el = document.createElement('section');
   el.className = 'clip teach';
-  el.setAttribute('role', 'button');
-  el.tabIndex = 0;
-  el.setAttribute('aria-label', 'Play or pause narration');
+  el.setAttribute('aria-label', 'Narrated lesson');
+  const course = ctx.topicsById?.[clip.topics?.[0]]?.course;
+  const arrow = (forward) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${forward ? 'M18 5v14M5 5l10 7-10 7Z' : 'M6 5v14M19 5l-10 7 10 7Z'}"/></svg>`;
   el.innerHTML = `
-    <div class="lesson-head"><p class="kicker">The daily dose</p><span class="lesson-format">Listen &amp; learn</span></div>
+    <div class="lesson-head"><p class="kicker">${course ? `RCP ${escape(course)}` : 'Your daily dose'}</p><span class="lesson-format">Listen &amp; learn</span></div>
+    <div class="lesson-art" aria-hidden="true"></div>
     <div class="frames">${clip.frames.map((f, i) => `
       <div class="frame${i ? '' : ' on'}"><span class="frame-number">${escape(String(i + 1).padStart(2, '0'))} / ${escape(String(clip.frames.length).padStart(2, '0'))}</span><p class="big">${escape(f.text)}</p>
         <p class="src">${sourceLines(f.claims, ctx.sources)}</p></div>`).join('')}
     </div>
-    <p class="teach-hint" aria-hidden="true">Tap to pause · Swipe to keep learning</p>
-    <div class="bar"><div class="fill"></div></div>
-    <div class="paused" aria-hidden="true" hidden>▶</div>`;
+    <div class="lesson-controls">
+      <div class="bar" aria-hidden="true"><div class="fill"></div></div>
+      <div class="transport">
+        <button class="frame-step" data-step="-1" aria-label="Previous slide">${arrow(false)}</button>
+        <button class="lesson-toggle" aria-label="Play narration"></button>
+        <button class="frame-step" data-step="1" aria-label="Next slide">${arrow(true)}</button>
+      </div>
+      <p class="playback-status" role="status">Narrated lesson</p>
+      <p class="teach-hint">Swipe for the next lesson</p>
+    </div>`;
   const frames = [...el.querySelectorAll('.frame')];
   const fill = el.querySelector('.fill');
-  const overlay = el.querySelector('.paused');
+  const toggleButton = el.querySelector('.lesson-toggle');
+  const previous = el.querySelector('[data-step="-1"]');
+  const next = el.querySelector('[data-step="1"]');
+  const status = el.querySelector('.playback-status');
   const { marks, duration } = timeline(clip);
-
-  let current = 0, pos = 0, active = false, timer = null;
+  let current = 0, pos = 0, active = false, timer = null, attempt = 0;
   let mode = 'idle'; // idle | audio | paused | timer | done
+  let fallbackUsed = false;
 
-  const show = (i) => {
-    if (i === current) return;
-    frames[current].classList.remove('on');
-    frames[i].classList.add('on');
-    current = i;
-  };
-  const update = (t) => {
+  function controls() {
+    const running = mode === 'audio' || mode === 'timer';
+    toggleButton.setAttribute('aria-label', mode === 'done' ? 'Replay narration' : running ? 'Pause narration' : 'Play narration');
+    toggleButton.innerHTML = running
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4 12 8-12 8Z"/></svg>';
+    previous.disabled = current === 0;
+    next.disabled = current === frames.length - 1;
+    status.textContent = mode === 'done' ? 'Lesson complete · Replay or swipe on' :
+      mode === 'timer' ? 'Audio unavailable · Slides advancing' :
+      mode === 'paused' ? (fallbackUsed ? 'Paused · Play to retry audio' : 'Paused') : 'Narrated lesson';
+  }
+  function update(t) {
     pos = t;
-    show(frameAt(t, marks, frames.length));
+    const i = frameAt(t, marks, frames.length);
+    if (i !== current) {
+      frames[current].classList.remove('on');
+      frames[i].classList.add('on');
+      frames[i].scrollTop = 0;
+      current = i;
+    }
     fill.style.width = `${Math.min(100, (100 * t) / duration)}%`;
-  };
-  const setOverlay = (kind) => { // null | 'paused' | 'retry'
-    overlay.hidden = !kind;
-    overlay.classList.toggle('retry', kind === 'retry');
-  };
+    previous.disabled = current === 0;
+    next.disabled = current === frames.length - 1;
+  }
   const stopTimer = () => { clearInterval(timer); timer = null; };
-  const finish = () => { stopTimer(); mode = 'done'; update(duration); setOverlay('paused'); ctx.onDone && ctx.onDone(clip); };
+  function finish() { stopTimer(); mode = 'done'; update(duration); controls(); ctx.onDone?.(clip); }
 
-  // Audio failed or was blocked: keep going on a timer; tapping retries audio.
   function fallback() {
     if (!active || mode === 'timer') return;
     player.pause();
     mode = 'timer';
-    setOverlay('retry');
+    fallbackUsed = true;
     const start = performance.now() - pos * 1000;
     stopTimer();
+    controls();
     timer = setInterval(() => {
       const t = (performance.now() - start) / 1000;
       if (t >= duration) finish(); else update(t);
     }, 200);
   }
-
+  function pause() {
+    attempt++;
+    stopTimer();
+    player.pause();
+    mode = 'paused';
+    controls();
+  }
   const handlers = {
     onTime: (t) => { if (mode === 'audio') update(t); },
     onEnded: () => { if (mode === 'audio') finish(); },
-    onError: () => fallback(),
-    onHidden: () => {
-      if (mode === 'audio' || mode === 'timer') { stopTimer(); mode = 'paused'; setOverlay('paused'); }
-    },
+    onError: () => { if (mode === 'audio') fallback(); },
+    onHidden: () => { if (mode === 'audio' || mode === 'timer') pause(); },
   };
-
   function playAudio() {
-    if (!player.owns(clip) || player.failed()) player.load(clip, handlers); // reload after an error so a retry can succeed
-    if (pos > 0 && pos < duration) player.seek(pos);
+    const request = ++attempt;
+    stopTimer();
+    if (!player.owns(clip) || player.failed()) player.load(clip, handlers);
+    player.seek(pos);
     mode = 'audio';
-    setOverlay(null);
+    controls();
     player.play().then(() => {
       if (!active) { player.release(clip); return; }
-      stopTimer();
+      if (request !== attempt) return;
+      fallbackUsed = false;
       mode = 'audio';
-      setOverlay(null);
-    }).catch(() => { if (mode === 'audio') fallback(); });
+      controls();
+    }).catch(() => { if (request === attempt && mode === 'audio') fallback(); });
   }
-
-  function toggle() {
+  toggleButton.addEventListener('click', () => {
     if (!active) return;
-    if (mode === 'audio' && player.isPlaying()) {
-      player.pause();
-      mode = 'paused';
-      setOverlay('paused');
-      return;
-    }
+    if (mode === 'audio' || mode === 'timer') { pause(); return; }
     if (mode === 'done') update(0);
-    stopTimer();
-    mode = 'idle';
     playAudio();
-  }
-
-  el.addEventListener('click', toggle);
-  el.addEventListener('keydown', (e) => {
-    if (e.target !== el || (e.key !== 'Enter' && e.key !== ' ')) return;
-    e.preventDefault();
-    toggle();
   });
-
+  for (const button of el.querySelectorAll('.frame-step')) button.addEventListener('click', () => {
+    if (!active) return;
+    const target = Math.max(0, Math.min(frames.length - 1, current + Number(button.dataset.step)));
+    const running = mode === 'audio' || mode === 'timer';
+    stopTimer();
+    attempt++;
+    update(marks[target] ?? target * FALLBACK_FRAME_SECS);
+    if (running) playAudio();
+    else { player.seek(pos); mode = 'paused'; controls(); }
+  });
+  controls();
   return {
     el,
     activate() {
@@ -133,9 +155,10 @@ export function render(clip, ctx) {
     },
     deactivate() {
       active = false;
+      attempt++;
       stopTimer();
       mode = 'idle';
-      setOverlay(null);
+      controls();
       player.release(clip);
     },
   };

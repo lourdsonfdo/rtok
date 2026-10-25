@@ -39,6 +39,7 @@ export function render(clip, ctx) {
   const platform = Object.hasOwn(PLATFORMS, clip.platform) ? clip.platform : 'unknown';
   const thumb = thumbSrc(clip);
   const src = embedSrc(clip);
+  const exitHint = ctx.videoExitHint || 'swipe on';
   el.className = `clip video ${platform}`;
   el.innerHTML = `<div class="body">
     <p class="kicker"><span class="platform-pill">${escape(PLATFORMS[platform] || clip.platform)}</span><span>${escape(clip.creator)}</span></p>
@@ -77,8 +78,8 @@ export function render(clip, ctx) {
   // connectivity changes, so an offline notice never hides Play for good.
   function refresh() {
     if (hidden || iframe) return;
-    if (navigator.onLine === false) notice('Video needs internet — swipe on');
-    else if (!src) notice('Video unavailable — swipe on');
+    if (navigator.onLine === false) notice(`Video needs internet — ${exitHint}`);
+    else if (!src) notice(`Video unavailable — ${exitHint}`);
     else { status.hidden = true; play.hidden = false; }
   }
 
@@ -118,7 +119,7 @@ export function render(clip, ctx) {
     if (hidden) return;
     hidden = true;
     stop();
-    notice('Hidden — swipe on');
+    notice(`Hidden — ${exitHint}`);
     skip.disabled = true;
     ctx.onHideVideo(clip);
   });
